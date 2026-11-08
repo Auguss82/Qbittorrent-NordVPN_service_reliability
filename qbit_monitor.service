@@ -1,0 +1,29 @@
+[Unit]
+Description=NordVPN WireGuard tunnel monitor for qbit container
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+ExecStart=/opt/scripts/qbit/qbit_monitor.sh
+PIDFile=/tmp/qbit-monitor.pid
+Restart=on-failure
+RestartSec=30
+
+# Safety net against unbounded memory growth. Baseline RSS for this
+# script is under 1MB, so these are generous ceilings, not tuned limits.
+# MemoryHigh: soft cap -- cgroup gets throttled/reclaimed past this, but
+#   the process is not killed.
+# MemoryMax: hard cap -- process is OOM-killed by the kernel if exceeded;
+#   Restart=on-failure above will then bring it back up.
+MemoryHigh=7M
+MemoryMax=15M
+
+# The script calls `docker exec` / `docker restart` / `docker stop`,
+# and `docker inspect`, so this needs to run as a user in the docker
+# group (or root). Uncomment and adjust if you don't want it as root:
+# User=youruser
+# Group=docker
+
+[Install]
+WantedBy=multi-user.target
